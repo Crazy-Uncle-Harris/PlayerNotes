@@ -1,0 +1,5 @@
+name: PlayerNotes
+version: 1.0
+description: Plugin for tracking notes on players.
+author: blha303
+main: tk.blha303.PlayerNotes
