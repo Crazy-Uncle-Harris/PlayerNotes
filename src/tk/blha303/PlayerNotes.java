@@ -48,9 +48,18 @@ public class PlayerNotes extends JavaPlugin implements Listener {
         return perms != null;
     }
     
-    public void newPlayerNote(String notes, Player about, Player from) {
-    	this.pnSql.SqlQuery("INSERT INTO " + this.pnConfig.getMySQLTable() + " (notes,about,from) " + 
-						"VALUES ('" + notes + "', '" + about.getName() + "', '" + from.getName() + "');");
+    public void newPlayerNote(String notes, Player about, String from) {
+    	String query = "INSERT INTO " + this.pnConfig.getMySQLTable() + " (notes,about,fromusr) " + 
+						"VALUES ('" + notes + "', '" + about.getName() + "', '" + from + "');";
+    	if ( this.pnConfig.isShowDebug()) { log.info(query); }
+    	this.pnSql.SqlQuery(query);
+    }
+    
+    public void newPlayerNoteOffline(String notes, String about, String from) {
+    	String query = "INSERT INTO " + this.pnConfig.getMySQLTable() + " (notes,about,fromusr) " + 
+						"VALUES ('" + notes + "', '" + about + "', '" + from + "');";
+    	if ( this.pnConfig.isShowDebug()) { log.info(query); }
+    	this.pnSql.SqlQuery(query);
     }
     
     public String getPlayerNotes(Player about) {
@@ -81,33 +90,118 @@ public class PlayerNotes extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player player = null;
         String notes;
+        String node;
 
         if ( sender instanceof Player) {
                 player = (Player) sender;
+        } else {
+        		player = null;
+        }
                 
                 if ( args.length == 0 ) {
                         return false;
                 }
                 
                 if ( command.getName().equalsIgnoreCase("notes")) {
-                	notes = getPlayerNotes(getServer().getPlayer(args[0]));
-                	if (notes!=null) {
-                		player.sendMessage(notes.replace("; ", "\n"));
+                	node = "playernotes.notes";
+                	if (perms.has(sender, node)) {
+                		notes = getPlayerNotes(getServer().getPlayer(args[0]));
+                		if (notes!=null) {
+                			if (player != null) {
+                				player.sendMessage("Notes for " + getServer().getPlayer(args[0]).getName() + ": " + notes);
+                				log.info(String.format("[%s] %s used /notes %s", getDescription().getName(), sender.getName(), args[0]));
+                			} else {
+                				log.info("[PlayerNotes] Notes for " + getServer().getPlayer(args[0]).getName() + ": " + notes);
+                			}
+                			return true;
+                		} else {
+                			if (player != null) {
+                				player.sendMessage("No notes / invalid player name.");
+                				log.info(String.format("[%s] %s used /notes %s", getDescription().getName(), sender.getName(), args[0]));
+                			} else {
+                				log.info("[PlayerNotes] No notes / invalid player name.");
+                			}
+                			return true;
+                		}
                 	} else {
-                		player.sendMessage("No notes / invalid player name.");
+                		if (player != null) {
+                			player.sendMessage("You don't have permission to use this command.");
+                		}
+                		return true;
                 	}
                 }
                 
                 if (command.getName().equalsIgnoreCase("noteadd")) {
+                	node = "playernotes.noteadd";
+                	if (perms.has(sender, node)) {
                 	String range = null;
                 	for (int i = 1; i < args.length; i++) {
-                		range = range + " " + args[i];
+                		if (range==null) {
+                			range = args[i];
+                		} else {
+                			range = range + " " + args[i];
+                		}
                 	}
-                	newPlayerNote(range, player, player);
+                	if (getServer().getPlayer(args[0]) == null) {
+                		if (player != null) {
+                			player.sendMessage("Player could not be found: " + args[0]);
+                			player.sendMessage("If the player is not online, use /noteaddo.");
+                			return false;
+                		} else {
+                			log.info("[PlayerNotes] Player could not be found: " + args[0]);
+                			log.info("[PlayerNotes] If the player is not online, use /noteaddo.");
+                			return false;
+                		}
+                	} else {
+                		if (player != null) {
+                			newPlayerNote(range, getServer().getPlayer(args[0]), player.getName());
+                			player.sendMessage("Note added.");
+                			log.info(String.format("[%s] %s used /noteadd %s %s", getDescription().getName(), sender.getName(), args[0], range));
+                			return true;
+                		} else {
+                			newPlayerNote(range, getServer().getPlayer(args[0]), "<CONSOLE>");
+                			log.info("[PlayerNotes] Note added.");
+                			return true;
+                		}
+                	}
+                } else {
+                		if (player != null) {
+                			player.sendMessage("You don't have permission to use this command.");
+                		}
+                		return true;
                 }
-        }
+                }
+                
+                if (command.getName().equalsIgnoreCase("noteaddo")) {
+                	node = "playernotes.noteaddo";
+                	if (perms.has(sender, node)) {
+                	String range = null;
+                	for (int i = 1; i < args.length; i++) {
+                		if (range==null) {
+                			range = args[i];
+                		} else {
+                			range = range + " " + args[i];
+                		}
+                	}
+                	if (player != null) {
+                    	newPlayerNoteOffline(range, args[0], player.getName());
+                    	player.sendMessage("Note added.");
+                    	log.info(String.format("[%s] %s used /noteadd %s %s", getDescription().getName(), sender.getName(), args[0], range));
+                    	return true;
+                	} else {
+                		newPlayerNoteOffline(range, args[0], "<CONSOLE>");
+                		log.info("[PlayerNotes] Note added.");
+                		return true;
+                	}
+                } else {
+                	if (player != null) {
+                		player.sendMessage("You don't have permission to use this command.");
+                	}
+                	return true;
+                }
+                }
         
         return false;
-}
+    }
 
 }

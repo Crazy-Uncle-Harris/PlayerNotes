@@ -3,3 +3,23 @@ version: 1.0
 description: Plugin for tracking notes on players.
 author: blha303
 main: tk.blha303.PlayerNotes
+commands:
+    notes:
+        description: Show notes
+        usage: /notes playername
+    noteadd:
+        description: Add note
+        usage: /noteadd playername note
+    noteaddo:
+        description: Add note (for offline player)
+        usage: /noteaddo playername note
+permissions:
+    playernotes.notes:
+        description: Allows players to use /notes
+        default: true
+    playernotes.noteadd:
+        description: Allows players to use /noteadd
+        default: false
+    playernotes.noteaddo:
+        description: Allows players to use /noteaddo
+        default: false
