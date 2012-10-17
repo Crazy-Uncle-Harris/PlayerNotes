@@ -1,25 +1,29 @@
 name: PlayerNotes
-version: 1.0
+version: 1.3
 description: Plugin for tracking notes on players.
 author: blha303
-main: tk.blha303.PlayerNotes
+website: http://blha303.com.au/PlayerNotes
+main: me.blha303.PlayerNotes
 commands:
-    notes:
-        description: Show notes
-        usage: /notes playername
-    noteadd:
+    pnotesview:
+        description: Show notes about a player
+        usage: /pnotesview playername
+        aliases: pnv
+    pnotesadd:
         description: Add note
-        usage: /noteadd playername note
-    noteaddo:
-        description: Add note (for offline player)
-        usage: /noteaddo playername note
+        usage: /pnotesadd playername note
+        aliases: pna
+    pnotesposted:
+        description: Show notes from a player
+        usage: /pnotesposted playername
+        aliases: pnp
 permissions:
-    playernotes.notes:
-        description: Allows players to use /notes
-        default: true
-    playernotes.noteadd:
-        description: Allows players to use /noteadd
+    playernotes.pnv:
+        description: Allows players to use /pnotesview
         default: false
-    playernotes.noteaddo:
-        description: Allows players to use /noteaddo
+    playernotes.pna:
+        description: Allows players to use /pnotesadd
+        default: false
+    playernotes.pnp:
+        description: Allows players to use /pnotesposted
         default: false
