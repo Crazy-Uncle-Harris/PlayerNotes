@@ -6,15 +6,15 @@ website: http://blha303.com.au/PlayerNotes
 main: me.blha303.PlayerNotes
 commands:
     pnotesview:
-        description: Show notes about a player
+        description: Show notes about a player. (/pnv)
         usage: /pnotesview playername
         aliases: pnv
     pnotesadd:
-        description: Add note
+        description: Add note. (/pna)
         usage: /pnotesadd playername note
         aliases: pna
     pnotesposted:
-        description: Show notes from a player
+        description: Show notes from a player. (/pnp)
         usage: /pnotesposted playername
         aliases: pnp
 permissions:

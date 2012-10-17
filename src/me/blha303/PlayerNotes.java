@@ -183,9 +183,9 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				for (int i = 1; result.absolute(i); i++) {
 					if (notes != null) {
 						notes = notes + ChatColor.WHITE + "; "
-								+ ChatColor.GREEN + result.getString("notes");
+								+ ChatColor.GREEN + result.getString("notes") + "(about " + result.getString("about") + ")";
 					} else {
-						notes = ChatColor.GREEN + result.getString("notes");
+						notes = ChatColor.GREEN + result.getString("notes") + "(about " + result.getString("about") + ")";
 					}
 					if (result.isAfterLast()) {
 						break;
