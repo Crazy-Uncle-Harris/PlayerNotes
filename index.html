@@ -2,86 +2,71 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>BLHAs PlayerNotes :: Home</title>
-        <!--<link  rel="stylesheet" type="text/css" href="http://mcaddictgallery.info/css/mainst.css"/>-->
+        <title>PlayerNotes documentation</title>
+        <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
         <style type="text/css">
-            body {
-                
-            }
-            #header {
-                width: 1024px ;
-                margin-right: auto;
-                margin-left: auto;
-                text-align: center;
-                border: 1px black solid;
-                border-radius: 15px;
-            }
-            hr {
-                width: 512px;
-                margin-right: auto;
-                margin-left: auto;
-            }
-            h4 {
-                width: 1024px ;
-                margin-right: auto;
-                margin-left: auto;
-                text-align: center;
-            }
-            .field {
-                width: 1024px ;
-                margin-right: auto;
-                margin-left: auto;
-                text-align: center;
-            }
-            .field > .command {
-                font-weight: bold;
-            }
-            .field > .description {
-                
-            }
+           body {
+             padding-top: 60px;
+             padding-bottom: 40px;
+             background-color: #eeeeee;
+           }
         </style>
+        <script language="JavaScript" src="js/bootstrap.js"></script>
         
     </head>
     <body>
-        <div id="header">
-            <h2 style>
-                PlayerNotes
-            </h2>
-            <div>
-                This plugins allows you and your admins to keep tabs on people easely.<br />
-                All the data are stored in SQL (only) for really fast access with no problems.
-                We hope soon enough to have ready a WebUI for it.
-            </div>
+    <a href="https://github.com/blha303ent/PlayerNotes"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="index.html">PlayerNotes</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="index.html">Home</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
         </div>
-        <br />
+      </div>
+      </div>
+      <div class="container">
+      <p>
+        This plugin allows you and your admins to keep tabs on people easily.<br />
+        All data is stored in SQL for fast access.
+      </p>
         <h4>
             Command list
         </h4>
-        <hr />
-        <div class="field">
-            <div class="command">
+        <blockquote style="border-left: none;">
+        <p>
+            <dt>
                 /pnotesview &lt;PLAYERNAME&gt;
-            </div>
-            <div class="description">
+            </dt>
+            <dd>
                 Show notes about a player. Alias: /pnv
-            </div>
-        </div>
-        <div class="field">
-            <div class="command">
+            </dd>
+        </p>
+        <p>
+            <dt>
                 /pnotesadd &lt;PLAYERNAME&gt; &lt;NOTE&gt;
-            </div>
-            <div class="description">
+            </dt>
+            <dd>
                 Add a note. Alias: /pna
-            </div>
-        </div>
-        <div class="field">
-            <div class="command">
+            </dd>
+        </p>
+        <p>
+            <dt>
                 /pnotesposted &lt;PLAYERNAME&gt;
-            </div>
-            <div class="description">
+            </dt>
+            <dd>
                 Show notes from a person. Alias /pnp
-            </div>
-        </div>
-        <a href="https://github.com/blha303ent/PlayerNotes"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+            </dd>
+        </p>
+        </blockquote>
+      </div>
     </body>
 </html>
