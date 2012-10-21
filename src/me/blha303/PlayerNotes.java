@@ -5,6 +5,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import javax.management.timer.Timer;
+
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.ChatColor;
@@ -18,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 //import couk.Adamki11s.Exceptions.MultipleUpdatePackageException;
 import couk.Adamki11s.SQL.SyncSQL;
 import couk.Adamki11s.Updates.UpdatePackage;
+
 //import couk.Adamki11s.Updates.UpdateService;
 
 public class PlayerNotes extends JavaPlugin implements Listener {
@@ -75,21 +78,23 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			log.severe("[PlayerNotes] " + e1.toString());
 		}
 		
-/*		//Sync auto-updates
-		String websiteURL = "http://blha303.com.au/PlayerNotes.html";
-	    boolean autoDownloadUpdates = true;
-	    boolean reloadAfterUpdate = false;
-	    File downloadLocation = new File("plugins" + File.separator + "PlayerNotes" + File.separator + "PlayerNotes.jar");
-	    pack = new UpdatePackage(plugin, websiteURL, autoDownloadUpdates, reloadAfterUpdate, downloadLocation);
-	    try {
-	        UpdateService.registerUpdateService(pack); //try and register our update service. Only 1 allowed per plugin
-	        //Sync will handle the rest.
-	    } catch (MultipleUpdatePackageException e1) {
-	        e1.printStackTrace();
-	    } */
+
+		/*
+		 * //Sync auto-updates String websiteURL =
+		 * "http://blha303.com.au/PlayerNotes.html"; boolean autoDownloadUpdates
+		 * = true; boolean reloadAfterUpdate = false; File downloadLocation =
+		 * new File("plugins" + File.separator + "PlayerNotes" + File.separator
+		 * + "PlayerNotes.jar"); pack = new UpdatePackage(plugin, websiteURL,
+		 * autoDownloadUpdates, reloadAfterUpdate, downloadLocation); try {
+		 * UpdateService.registerUpdateService(pack); //try and register our
+		 * update service. Only 1 allowed per plugin //Sync will handle the
+		 * rest. } catch (MultipleUpdatePackageException e1) {
+		 * e1.printStackTrace(); }
+		 */
 
 		// Registering the command listener
 		getServer().getPluginManager().registerEvents(this, this);
+
 		// Setting up Vault permissions
 		setupPermissions();
 		// Complete
@@ -104,17 +109,18 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		return perms != null;
 	}
 
-	public boolean newPlayerNote(String notes, Player about, String from) {
+	public boolean newPlayerNote(String notes, String about, String from) {
 		String notesa = notes.replace("\\", "\\\\");
 		String notesb = notesa.replace("'", "\\'");
-		
+
 		String query = "INSERT INTO " + this.pnConfig.getMySQLTable()
 				+ " (notes,about,fromusr) " + "VALUES ('" + notesb + "', '"
-				+ about.getName() + "', '" + from + "');";
+				+ about + "', '" + from + "');";
 		if (this.pnConfig.isShowDebug()) {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
+			this.sql.refreshConnection();
 			this.sql.standardQuery(query);
 			return true;
 		} catch (SQLException e) {
@@ -133,6 +139,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
+			this.sql.refreshConnection();
 			result = this.sql.sqlQuery(query);
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
@@ -161,7 +168,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			return null;
 		}
 	}
-	
+
 	public String getFromNotes(String from) {
 		String notes = null;
 		String froma = from.replace("\\", "\\\\");
@@ -172,6 +179,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
+			this.sql.refreshConnection();
 			result = this.sql.sqlQuery(query);
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
@@ -183,9 +191,11 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				for (int i = 1; result.absolute(i); i++) {
 					if (notes != null) {
 						notes = notes + ChatColor.WHITE + "; "
-								+ ChatColor.GREEN + result.getString("notes") + "(about " + result.getString("about") + ")";
+								+ ChatColor.GREEN + result.getString("notes")
+								+ "(about " + result.getString("about") + ")";
 					} else {
-						notes = ChatColor.GREEN + result.getString("notes") + "(about " + result.getString("about") + ")";
+						notes = ChatColor.GREEN + result.getString("notes")
+								+ "(about " + result.getString("about") + ")";
 					}
 					if (result.isAfterLast()) {
 						break;
@@ -238,9 +248,9 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 					if (player != null) {
 						player.sendMessage(ChatColor.DARK_GREEN + "Notes for "
 								+ args[0] + ": " + notes);
-						log.info(String.format("[%s] %s used /notes %s",
+						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
-								args[0]));
+								command.getName(), args[0]));
 					} else {
 						log.info(ChatColor.DARK_GREEN
 								+ "[PlayerNotes] Notes for " + args[0] + ": "
@@ -251,9 +261,9 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 					if (player != null) {
 						player.sendMessage(ChatColor.RED
 								+ "No notes / invalid player name.");
-						log.info(String.format("[%s] %s used /notes %s",
+						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
-								args[0]));
+								command.getName(), args[0]));
 					} else {
 						log.info(ChatColor.RED
 								+ "[PlayerNotes] No notes / invalid player name.");
@@ -268,7 +278,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				return true;
 			}
 		}
-		
+
 		if (command.getName().equalsIgnoreCase("pnotesposted")) {
 			node = "playernotes.pnp";
 			boolean go = false;
@@ -303,9 +313,9 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 					if (player != null) {
 						player.sendMessage(ChatColor.RED
 								+ "No notes / invalid player name.");
-						log.info(String.format("[%s] %s used /notes %s",
+						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
-								args[0]));
+								command.getName(), args[0]));
 					} else {
 						log.info(ChatColor.RED
 								+ "[PlayerNotes] No notes / invalid player name.");
@@ -346,66 +356,40 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 						range = range + " " + args[i];
 					}
 				}
-				if (getServer().getPlayer(args[0]) == null) {
-					if (player != null) {
-						player.sendMessage(ChatColor.RED
-								+ "Player could not be found: "
-								+ ChatColor.WHITE + args[0]);
-						player.sendMessage(ChatColor.RED
-								+ "If the player is not online, use /noteaddo.");
-						return false;
+				if (player != null) {
+					note = newPlayerNote(range, args[0], player.getName());
+					if (note) {
+						player.sendMessage(ChatColor.GREEN + "Note added.");
+						log.info(String.format("[%s] %s used /%s %s %s",
+								getDescription().getName(), sender.getName(),
+								command.getName(), args[0], range));
+						return true;
 					} else {
-						log.info(ChatColor.RED
-								+ "[PlayerNotes] Player could not be found: "
-								+ ChatColor.WHITE + args[0]);
-						log.info(ChatColor.RED
-								+ "[PlayerNotes] If the player is not online, use /noteaddo.");
-						return false;
+						player.sendMessage(ChatColor.RED
+								+ "Note could not be added.");
+						log.info(String.format("[%s] %s used /%s %s %s",
+								getDescription().getName(), sender.getName(),
+								command.getName(), args[0], range));
+						return true;
 					}
 				} else {
-					if (player != null) {
-						note = newPlayerNote(range,
-								getServer().getPlayer(args[0]),
-								player.getName());
-						if (note) {
-							player.sendMessage(ChatColor.GREEN + "Note added.");
-							log.info(String.format(
-									"[%s] %s used /noteadd %s %s",
-									getDescription().getName(),
-									sender.getName(), args[0], range));
-							return true;
-						} else {
-							player.sendMessage(ChatColor.RED
-									+ "Note could not be added.");
-							player.sendMessage(ChatColor.RED
-									+ "Don't use ', \" or \\ in your note.");
-							log.info(String.format(
-									"[%s] %s used /noteadd %s %s",
-									getDescription().getName(),
-									sender.getName(), args[0], range));
-							return true;
-						}
+					note = newPlayerNote(range, args[0], "<CONSOLE>");
+					if (note) {
+						log.info(ChatColor.GREEN + "[PlayerNotes] Note added.");
+						return true;
 					} else {
-						note = newPlayerNote(range,
-								getServer().getPlayer(args[0]), "<CONSOLE>");
-						if (note) {
-							log.info(ChatColor.GREEN
-									+ "[PlayerNotes] Note added.");
-							return true;
-						} else {
-							log.info(ChatColor.RED
-									+ "[PlayerNotes] Note could not be added.");
-							return true;
-						}
+						log.info(ChatColor.RED
+								+ "[PlayerNotes] Note could not be added.");
+						return true;
 					}
 				}
-			} else {
-				if (player != null) {
-					player.sendMessage(ChatColor.RED
-							+ "You don't have permission to use this command.");
-				}
-				return true;
 			}
+		} else {
+			if (player != null) {
+				player.sendMessage(ChatColor.RED
+						+ "You don't have permission to use this command.");
+			}
+			return true;
 		}
 
 		return false;
