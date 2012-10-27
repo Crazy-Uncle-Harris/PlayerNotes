@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-import javax.management.timer.Timer;
+//import javax.management.timer.Timer;
 
 import net.milkbowl.vault.permission.Permission;
 
