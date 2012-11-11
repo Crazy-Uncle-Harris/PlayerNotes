@@ -1,11 +1,8 @@
 package me.blha303;
 
-//import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-
-//import javax.management.timer.Timer;
 
 import net.milkbowl.vault.permission.Permission;
 
@@ -17,11 +14,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-//import couk.Adamki11s.Exceptions.MultipleUpdatePackageException;
 import couk.Adamki11s.SQL.SyncSQL;
 import couk.Adamki11s.Updates.UpdatePackage;
-
-//import couk.Adamki11s.Updates.UpdateService;
 
 public class PlayerNotes extends JavaPlugin implements Listener {
 
@@ -31,6 +25,12 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 	public final PlayerNotesSQLConfig pnConfig = new PlayerNotesSQLConfig(this);
 	public final PlayerNotesSQLLib pnSql = new PlayerNotesSQLLib(this);
 	public ResultSet result;
+	ChatColor header = ChatColor.getByChar("2");
+	ChatColor aboutc = ChatColor.getByChar("3");
+	String col = ChatColor.GRAY + ":" + ChatColor.getByChar("a");
+	String sep = ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + " |-| ";
+//  &2Notes from johnkapsis&7: &3blha303&7: &anotes &e&l|-|&f &3blha303&7: &amore notes
+//  &2Notes about blha303&7: &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
 	public SyncSQL sql = null;
 	UpdatePackage pack;
 
@@ -43,22 +43,15 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 
 	@Override
 	public void onEnable() {
-		// Checking dependencies
-		if (getServer().getPluginManager().getPlugin("Vault") == null) {
-			log.severe(String.format("[%s] Disabled. Vault is missing!",
+		if (getServer().getPluginManager().getPlugin("Vault") == null
+				|| getServer().getPluginManager().getPlugin("Sync") == null) {
+			log.severe(String.format(
+					"[%s] Disabled. Vault or Sync is missing!",
 					getDescription().getName()));
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		if (getServer().getPluginManager().getPlugin("Sync") == null) {
-			log.severe(String.format("[%s] Disabled. Sync is missing!",
-					getDescription().getName()));
-			getServer().getPluginManager().disablePlugin(this);
-			return;
-		}
-		// Loading config.yml
 		pnConfig.loadConfiguration();
-		// Setting up the SQL connection
 		try {
 			this.sql = pnSql.SQLConnection();
 		} catch (SQLException e1) {
@@ -77,27 +70,12 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		} catch (SQLException e1) {
 			log.severe("[PlayerNotes] " + e1.toString());
 		}
-		
+		this.sql.closeConnection();
 
-		/*
-		 * //Sync auto-updates String websiteURL =
-		 * "http://blha303.com.au/PlayerNotes.html"; boolean autoDownloadUpdates
-		 * = true; boolean reloadAfterUpdate = false; File downloadLocation =
-		 * new File("plugins" + File.separator + "PlayerNotes" + File.separator
-		 * + "PlayerNotes.jar"); pack = new UpdatePackage(plugin, websiteURL,
-		 * autoDownloadUpdates, reloadAfterUpdate, downloadLocation); try {
-		 * UpdateService.registerUpdateService(pack); //try and register our
-		 * update service. Only 1 allowed per plugin //Sync will handle the
-		 * rest. } catch (MultipleUpdatePackageException e1) {
-		 * e1.printStackTrace(); }
-		 */
-
-		// Registering the command listener
 		getServer().getPluginManager().registerEvents(this, this);
 
-		// Setting up Vault permissions
 		setupPermissions();
-		// Complete
+
 		log.info(String.format("[%s] Enabled version %s", getDescription()
 				.getName(), getDescription().getVersion()));
 	}
@@ -113,6 +91,12 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String notesa = notes.replace("\\", "\\\\");
 		String notesb = notesa.replace("'", "\\'");
 
+		try {
+			this.sql = pnSql.SQLConnection();
+		} catch (SQLException e1) {
+			log.severe("[PlayerNotes] " + e1.toString());
+		}
+
 		String query = "INSERT INTO " + this.pnConfig.getMySQLTable()
 				+ " (notes,about,fromusr) " + "VALUES ('" + notesb + "', '"
 				+ about + "', '" + from + "');";
@@ -120,11 +104,12 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
-			this.sql.refreshConnection();
 			this.sql.standardQuery(query);
+			this.sql.closeConnection();
 			return true;
 		} catch (SQLException e) {
 			log.info("[PlayerNotes] " + e.toString());
+			this.sql.closeConnection();
 			return false;
 		}
 	}
@@ -135,36 +120,43 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String aboutb = abouta.replace("'", "\\'");
 		String query = "SELECT * FROM " + this.pnConfig.getMySQLTable()
 				+ " WHERE about='" + aboutb + "';";
+		try {
+			this.sql = pnSql.SQLConnection();
+		} catch (SQLException e1) {
+			log.severe("[PlayerNotes] " + e1.toString());
+		}
+
 		if (this.pnConfig.isShowDebug()) {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
-			this.sql.refreshConnection();
 			result = this.sql.sqlQuery(query);
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
 			return null;
 		}
-
+	//  &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
 		try {
 			if (result.isBeforeFirst()) {
 				for (int i = 1; result.absolute(i); i++) {
 					if (notes != null) {
-						notes = notes + ChatColor.WHITE + "; "
-								+ ChatColor.GREEN + result.getString("notes");
+						notes = notes + sep + aboutc + result.getString("fromusr") + col + result.getString("notes");
 					} else {
-						notes = ChatColor.GREEN + result.getString("notes");
+						notes = aboutc + result.getString("fromusr") + col + result.getString("notes");
 					}
 					if (result.isAfterLast()) {
 						break;
 					}
 				}
+				this.sql.closeConnection();
 				return notes;
 			} else {
+				this.sql.closeConnection();
 				return null;
 			}
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
+			this.sql.closeConnection();
 			return null;
 		}
 	}
@@ -175,11 +167,16 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String fromb = froma.replace("'", "\\'");
 		String query = "SELECT * FROM " + this.pnConfig.getMySQLTable()
 				+ " WHERE fromusr='" + fromb + "';";
+		try {
+			this.sql = pnSql.SQLConnection();
+		} catch (SQLException e1) {
+			log.severe("[PlayerNotes] " + e1.toString());
+		}
+
 		if (this.pnConfig.isShowDebug()) {
 			log.info("[PlayerNames] DEBUG: " + query);
 		}
 		try {
-			this.sql.refreshConnection();
 			result = this.sql.sqlQuery(query);
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
@@ -190,23 +187,23 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			if (result.isBeforeFirst()) {
 				for (int i = 1; result.absolute(i); i++) {
 					if (notes != null) {
-						notes = notes + ChatColor.WHITE + "; "
-								+ ChatColor.GREEN + result.getString("notes")
-								+ "(about " + result.getString("about") + ")";
+						notes = notes + sep + aboutc + result.getString("about") + col + result.getString("notes");
 					} else {
-						notes = ChatColor.GREEN + result.getString("notes")
-								+ "(about " + result.getString("about") + ")";
+						notes = aboutc + result.getString("about") + col + result.getString("notes");
 					}
 					if (result.isAfterLast()) {
 						break;
 					}
 				}
+				this.sql.closeConnection();
 				return notes;
 			} else {
+				this.sql.closeConnection();
 				return null;
 			}
 		} catch (SQLException e) {
 			log.severe("[PlayerNotes] " + e.toString());
+			this.sql.closeConnection();
 			return null;
 		}
 	}
@@ -215,7 +212,10 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			String label, String[] args) {
 		Player player = null;
 		String notes;
-		String node;
+		String pnvnode = "playernotes.pnv";
+		// String pnhnode = "playernotes.pnh";
+		String pnpnode = "playernotes.pnp";
+		String pnanode = "playernotes.pna";
 
 		if (sender instanceof Player) {
 			player = (Player) sender;
@@ -227,13 +227,44 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			return false;
 		}
 
+		/*
+		 * if (command.getName().equalsIgnoreCase("pnoteshelp")) { boolean pnv =
+		 * perms.has(player, pnvnode); boolean pnp = perms.has(player, pnpnode);
+		 * boolean pna = perms.has(player, pnanode); boolean isplayer = false;
+		 * boolean go = false; if (player != null) { isplayer = true; if
+		 * (perms.has(sender, pnhnode)) { go = true; } else { go = false; } }
+		 * else { go = true; }
+		 * 
+		 * if (go) { ChatColor red = ChatColor.RED; ChatColor white =
+		 * ChatColor.WHITE; ChatColor aqua = ChatColor.AQUA; if (isplayer) {
+		 * player.sendMessage(String.format(ChatColor.GREEN + "%s v%s",
+		 * getDescription().getName(), getDescription().getVersion())); if (pnv
+		 * || pnp || pna) { player.sendMessage(String.format(ChatColor.GOLD +
+		 * "Commands:")); if (pnv) { player.sendMessage(String.format( red +
+		 * "/pnotesview <PLAYER>" + white + " - " + aqua +
+		 * "List all notes about a player")); } if (pnp) {
+		 * player.sendMessage(String.format( red + "/pnotesposted <PLAYER>" +
+		 * white + " - " + aqua + "List all notes from a player")); } if (pna) {
+		 * player.sendMessage(String.format( red + "/pnotesadd <PLAYER> <NOTE>"
+		 * + white + " - " + aqua + "Add a note")); } return true; } else {
+		 * player.sendMessage(red +
+		 * "You don't have access to any PlayerNotes commands"); return true; }
+		 * } else { log.info(String.format(ChatColor.GREEN + "%s v%s",
+		 * getDescription().getName(), getDescription().getVersion()));
+		 * log.info(String.format(ChatColor.GOLD + "Commands:"));
+		 * log.info(String.format( red + "/pnotesview <PLAYER>" + white + " - "
+		 * + aqua + "List all notes about a player")); log.info(String.format(
+		 * red + "/pnotesposted <PLAYER>" + white + " - " + aqua +
+		 * "List all notes from a player")); log.info(String.format( red +
+		 * "/pnotesadd <PLAYER> <NOTE>" + white + " - " + aqua + "Add a note"));
+		 * return true; } } else { player.sendMessage(ChatColor.RED +
+		 * "You can't use this command."); return true; } }
+		 */
+
 		if (command.getName().equalsIgnoreCase("pnotesview")) {
-			node = "playernotes.pnv";
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, node)) {
-					go = true;
-				} else if (sender.isOp()) {
+				if (perms.has(sender, pnvnode)) {
 					go = true;
 				} else {
 					go = false;
@@ -246,15 +277,12 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				notes = getPlayerNotes(args[0]);
 				if (notes != null) {
 					if (player != null) {
-						player.sendMessage(ChatColor.DARK_GREEN + "Notes for "
-								+ args[0] + ": " + notes);
+						player.sendMessage(header + "Notes for " + args[0] + ": " + notes);
 						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
 								command.getName(), args[0]));
 					} else {
-						log.info(ChatColor.DARK_GREEN
-								+ "[PlayerNotes] Notes for " + args[0] + ": "
-								+ notes);
+						log.info(header + "[PlayerNotes] Notes for " + args[0] + ": " + notes);
 					}
 					return true;
 				} else {
@@ -280,12 +308,9 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		}
 
 		if (command.getName().equalsIgnoreCase("pnotesposted")) {
-			node = "playernotes.pnp";
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, node)) {
-					go = true;
-				} else if (sender.isOp()) {
+				if (perms.has(sender, pnpnode)) {
 					go = true;
 				} else {
 					go = false;
@@ -298,13 +323,13 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				notes = getFromNotes(args[0]);
 				if (notes != null) {
 					if (player != null) {
-						player.sendMessage(ChatColor.DARK_GREEN + "Notes from "
+						player.sendMessage(header + "Notes from "
 								+ args[0] + ": " + notes);
 						log.info(String.format("[%s] %s used /notes %s",
 								getDescription().getName(), sender.getName(),
 								args[0]));
 					} else {
-						log.info(ChatColor.DARK_GREEN
+						log.info(header
 								+ "[PlayerNotes] Notes from " + args[0] + ": "
 								+ notes);
 					}
@@ -332,13 +357,10 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		}
 
 		if (command.getName().equalsIgnoreCase("pnotesadd")) {
-			node = "playernotes.pna";
 			boolean note;
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, node)) {
-					go = true;
-				} else if (sender.isOp()) {
+				if (perms.has(sender, pnanode)) {
 					go = true;
 				} else {
 					go = false;
@@ -383,15 +405,14 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 						return true;
 					}
 				}
+			} else {
+				if (player != null) {
+					player.sendMessage(ChatColor.RED
+							+ "You don't have permission to use this command.");
+				}
+				return true;
 			}
-		} else {
-			if (player != null) {
-				player.sendMessage(ChatColor.RED
-						+ "You don't have permission to use this command.");
-			}
-			return true;
 		}
-
 		return false;
 	}
 

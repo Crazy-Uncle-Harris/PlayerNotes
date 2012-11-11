@@ -25,7 +25,7 @@ public class PlayerNotesSQLLib
   public void createSqlTable(SyncSQL sql) throws SQLException {
     sql.standardQuery("CREATE TABLE " + plugin.pnConfig.getMySQLTable()  +
 			" (id INT not null auto_increment, " +
-			"PRIMARY KEY (idplayernotes), " + 
+			"PRIMARY KEY (id), " + 
 			"notes varchar(2000), " +
 			"about varchar(45), " +
 			"fromusr varchar(45))");
