@@ -167,7 +167,6 @@ public class PlayerNotesSQLLib {
 			if (result != null) {
 				debug("Result is something!");
 			}
-			SQLDisconnect();
 			return result;
 		} catch (SQLException e) {
 			plugin.error("Unable to get ResultSet", e);
@@ -177,7 +176,7 @@ public class PlayerNotesSQLLib {
 
 	public void debug(String debug) {
 		if (plugin.pnConfig.isShowDebug()) {
-			log.info("[PlayerNames] DEBUG: " + debug);
+			log.info("[PlayerNotes] DEBUG: " + debug);
 		}
 	}
 }

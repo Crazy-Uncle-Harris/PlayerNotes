@@ -26,7 +26,8 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 	ChatColor header = ChatColor.getByChar("2");
 	ChatColor aboutc = ChatColor.getByChar("3");
 	String col = ChatColor.GRAY + ":" + ChatColor.getByChar("a");
-	String sep = ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + " |-| ";
+	String sep = ChatColor.YELLOW.toString() + ChatColor.BOLD.toString()
+			+ " |-| ";
 	public Connection sql = null;
 
 	@Override
@@ -42,16 +43,15 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 
 	@Override
 	public void onEnable() {
-		
+
 		// Checks for dependencies
 		if (getServer().getPluginManager().getPlugin("Vault") == null) {
-			log.severe(String.format(
-					"[%s] Disabled. Vault is missing!",
+			log.severe(String.format("[%s] Disabled. Vault is missing!",
 					getDescription().getName()));
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		
+
 		// Loads modified configuration
 		String mySQLServer = "MySQLServer";
 		String mySQLPort = "MySQLPort";
@@ -60,17 +60,20 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String mySQLDatabase = "MySQLDatabase";
 		String mySQLTable = "MySQLTable";
 		getConfig().addDefault(mySQLServer, "localhost");
-		getConfig().addDefault(mySQLPort,  "3306");
+		getConfig().addDefault(mySQLPort, "3306");
 		getConfig().addDefault(mySQLUsername, "root");
 		getConfig().addDefault(mySQLPassword, "password");
 		getConfig().addDefault(mySQLDatabase, "db");
-		getConfig().addDefault(mySQLTable,  "playernotes");
+		getConfig().addDefault(mySQLTable, "playernotes");
 		getConfig().addDefault("showDebug", false);
 		getConfig().options().copyDefaults(true);
 		pnConfig = new PlayerNotesSQLConfig(this);
-		
+
 		saveConfig();
-		
+
+		if (pnConfig.isShowDebug()) {
+			log.info("[PlayerNotes] Debug mode enabled!");
+		}
 		// Sets up SQL
 		pnSql = new PlayerNotesSQLLib(this);
 		try {
@@ -79,10 +82,11 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			log.severe("[PlayerNotes] " + e1.toString());
 			getServer().getPluginManager().disablePlugin(this);
 		}
-		
+
 		// Checks if the notes table exists
 		try {
-			if (!pnSql.tableExists(this.pnConfig.getMySQLDatabase(), this.pnConfig.getMySQLTable())) {
+			if (!pnSql.tableExists(this.pnConfig.getMySQLDatabase(),
+					this.pnConfig.getMySQLTable())) {
 				log.info("[PlayerNotes] Table '"
 						+ this.pnConfig.getMySQLTable()
 						+ "' does not exist! Creating table...");
@@ -94,26 +98,26 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			error("Unable to create table. Plugin disabled!", e1);
 			getServer().getPluginManager().disablePlugin(this);
 		}
-		
+
 		// Checks if the new datetime column exists. Doesn't work at the moment.
-//		if (!this.pnSql.columnExists(this.pnConfig.getMySQLDatabase(),
-//				this.pnConfig.getMySQLTable(), "datetime")) {
-//			log.info("[PlayerNotes] Creating datetime column for table.");
-//			try {
-//				pnSql.runUpdateQuery("ALTER TABLE "
-//						+ plugin.pnConfig.getMySQLTable()
-//						+ " ADD COLUMN datetime INT;");
-//			} catch (Exception e) {
-//				if (!(e instanceof SQLException)) {
-//					e.printStackTrace();
-//					getServer().getPluginManager().disablePlugin(this);
-//				}
-//				log.severe("[PlayerNotes] " + e.toString());
-//				log.severe("[PlayerNotes] Unable to create datetime column. Plugin disabled!");
-//				getServer().getPluginManager().disablePlugin(this);
-//			}
-//		}
-		
+		// if (!this.pnSql.columnExists(this.pnConfig.getMySQLDatabase(),
+		// this.pnConfig.getMySQLTable(), "datetime")) {
+		// log.info("[PlayerNotes] Creating datetime column for table.");
+		// try {
+		// pnSql.runUpdateQuery("ALTER TABLE "
+		// + plugin.pnConfig.getMySQLTable()
+		// + " ADD COLUMN datetime INT;");
+		// } catch (Exception e) {
+		// if (!(e instanceof SQLException)) {
+		// e.printStackTrace();
+		// getServer().getPluginManager().disablePlugin(this);
+		// }
+		// log.severe("[PlayerNotes] " + e.toString());
+		// log.severe("[PlayerNotes] Unable to create datetime column. Plugin disabled!");
+		// getServer().getPluginManager().disablePlugin(this);
+		// }
+		// }
+
 		// Disconnect from SQL. If this doesn't happen, it times out later on.
 		try {
 			pnSql.SQLDisconnect();
@@ -145,7 +149,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String notesa = notes.replace("\\", "\\\\");
 		String notesb = notesa.replace("'", "\\'");
 		long datetime = System.currentTimeMillis() / 1000l;
-		
+
 		try {
 			sql = pnSql.SQLConnect();
 		} catch (SQLException e1) {
@@ -186,36 +190,31 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			pnSql.debug("Result: 1");
 			// &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
 			try {
+				result.beforeFirst();
 				pnSql.debug("Result: 2");
-				if (result.next()) {
+				while (result.next()) {
 					pnSql.debug("Result: 3");
-					for (int i = 1; result.absolute(i); i++) {
-						pnSql.debug("Result: 4");
-						if (notes != null) {
-							pnSql.debug("Result: 5");
-							notes = notes + sep + aboutc
-									+ result.getString("fromusr") + col
-									+ result.getString("notes");
-						} else {
-							pnSql.debug("Result: 6");
-							notes = aboutc + result.getString("fromusr") + col
-									+ result.getString("notes");
-						}
-						if (result.isAfterLast()) {
-							pnSql.debug("Result: 7");
-							break;
-						}
+					if (notes != null) {
+						pnSql.debug("Result: 5");
+						notes = notes + sep + aboutc
+								+ result.getString("fromusr") + col
+								+ result.getString("notes");
+					} else {
+						pnSql.debug("Result: 6");
+						notes = aboutc + result.getString("fromusr") + col
+								+ result.getString("notes");
 					}
-					pnSql.debug("Result: 8");
-					pnSql.SQLDisconnect();
-					return notes;
-				} else {
-					pnSql.debug("Result: 9");
-					pnSql.SQLDisconnect();
-					return null;
+					if (result.isAfterLast()) {
+						pnSql.debug("Result: 7");
+						break;
+					}
 				}
+				pnSql.debug("Result: 8");
+				pnSql.SQLDisconnect();
+				return notes;
 			} catch (SQLException e) {
 				pnSql.debug("Result: 10");
+				e.printStackTrace();
 				return null;
 			}
 		} else {
@@ -231,35 +230,41 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		result = pnSql.getInfo(true, fromb);
 		if (result != null) {
 			try {
-				if (result.isBeforeFirst()) {
-					for (int i = 1; result.absolute(i); i++) {
-						if (notes != null) {
+				result.beforeFirst();
+				pnSql.debug("Result: 2");
+				while (result.next()) {
+					pnSql.debug("Result: 3");
+					if (notes != null) {
+						pnSql.debug("Result: 5");
 							notes = notes + sep + aboutc
 									+ result.getString("about") + col
 									+ result.getString("notes");
-						} else {
+					} else {
+						pnSql.debug("Result: 6");
 							notes = aboutc + result.getString("about") + col
 									+ result.getString("notes");
-						}
-						if (result.isAfterLast()) {
-							break;
-						}
 					}
-					pnSql.SQLDisconnect();
-					return notes;
-				} else {
-					pnSql.SQLDisconnect();
-					return null;
+					if (result.isAfterLast()) {
+						pnSql.debug("Result: 7");
+						break;
+					}
 				}
+				pnSql.debug("Result: 8");
+				pnSql.SQLDisconnect();
+				return notes;
 			} catch (SQLException e) {
+				pnSql.debug("Result: 10");
+				e.printStackTrace();
 				return null;
 			}
 		} else {
+			pnSql.debug("Result: 11");
 			return null;
 		}
 	}
 
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(CommandSender sender, Command command,
+			String label, String[] args) {
 		Player player = null;
 		String notes;
 		String pnvnode = "playernotes.pnv";
@@ -292,13 +297,13 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				notes = getPlayerNotes(args[0]);
 				if (notes != null) {
 					if (player != null) {
-						player.sendMessage(header + "Notes for " + args[0]
+						player.sendMessage(header + "Notes about " + args[0]
 								+ ": " + notes);
 						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
 								command.getName(), args[0]));
 					} else {
-						log.info(header + "[PlayerNotes] Notes for " + args[0]
+						log.info(header + "[PlayerNotes] Notes about " + args[0]
 								+ ": " + notes);
 					}
 					return true;
@@ -429,14 +434,16 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				return true;
 			}
 		}
+
+		
 		return false;
 	}
-	
+
 	public void error(String error, SQLException exception) {
 		log.severe("[PlayerNotes] " + error);
 		log.severe("[PlayerNotes] Debug: " + exception.getMessage());
 	}
-	
+
 	public void error(String error, SQLException exception, String name) {
 		log.severe("[PlayerNotes] " + error + "! Triggered by " + name);
 		log.severe("[PlayerNotes] Debug: " + exception.getMessage());

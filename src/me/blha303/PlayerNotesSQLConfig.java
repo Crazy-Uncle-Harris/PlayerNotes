@@ -68,5 +68,14 @@ public class PlayerNotesSQLConfig {
 	
 	public boolean isShowDebug() {
 		return plugin.getConfig().getBoolean("showDebug");
-	}	
+	}
+	
+	public void toggleShowDebug() {
+		if (plugin.getConfig().getBoolean("showDebug")) {
+			plugin.getConfig().set("showDebug", false);
+		} else {
+			plugin.getConfig().set("showDebug", true);
+		}
+		plugin.saveConfig();
+	}
 }

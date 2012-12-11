@@ -17,6 +17,9 @@ commands:
         description: 'Show notes from a player. (/pnp)'
         usage: /pnotesposted playername
         aliases: pnp
+    pnd:
+        description: 'Toggle debug mode'
+        usage: /pnd
 permissions:
     playernotes.*:
         description: Allows players to use all pnotes commands
@@ -32,4 +35,7 @@ permissions:
         default: false
     playernotes.pnp:
         description: Allows players to use /pnotesposted
+        default: false
+    playernotes.pnd:
+        description: Allows players to use /pnd
         default: false
