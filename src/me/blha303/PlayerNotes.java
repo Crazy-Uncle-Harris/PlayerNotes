@@ -183,32 +183,43 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		}
 		result = pnSql.getInfo(false, aboutb);
 		if (result != null) {
+			pnSql.debug("Result: 1");
 			// &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
 			try {
+				pnSql.debug("Result: 2");
 				if (result.next()) {
+					pnSql.debug("Result: 3");
 					for (int i = 1; result.absolute(i); i++) {
+						pnSql.debug("Result: 4");
 						if (notes != null) {
+							pnSql.debug("Result: 5");
 							notes = notes + sep + aboutc
 									+ result.getString("fromusr") + col
 									+ result.getString("notes");
 						} else {
+							pnSql.debug("Result: 6");
 							notes = aboutc + result.getString("fromusr") + col
 									+ result.getString("notes");
 						}
 						if (result.isAfterLast()) {
+							pnSql.debug("Result: 7");
 							break;
 						}
 					}
+					pnSql.debug("Result: 8");
 					pnSql.SQLDisconnect();
 					return notes;
 				} else {
+					pnSql.debug("Result: 9");
 					pnSql.SQLDisconnect();
 					return null;
 				}
 			} catch (SQLException e) {
+				pnSql.debug("Result: 10");
 				return null;
 			}
 		} else {
+			pnSql.debug("Result: 11");
 			return null;
 		}
 	}
