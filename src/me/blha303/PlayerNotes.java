@@ -185,7 +185,7 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		if (result != null) {
 			// &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
 			try {
-				if (result.isBeforeFirst()) {
+				if (result.next()) {
 					for (int i = 1; result.absolute(i); i++) {
 						if (notes != null) {
 							notes = notes + sep + aboutc
