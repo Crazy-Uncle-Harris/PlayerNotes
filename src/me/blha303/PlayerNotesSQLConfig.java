@@ -3,30 +3,19 @@ package me.blha303;
 public class PlayerNotesSQLConfig {
 	
 	PlayerNotes plugin;
+	String MySQLServer,MySQLPort,MySQLUsername,MySQLPassword,MySQLDatabase,MySQLTable;
+	
+	public void loadConfiguration(String server, String port, String username, String pass, String dbase, String table) {
+		MySQLServer = server;
+		MySQLPort = port;
+		MySQLUsername = username;
+		MySQLPassword = pass;
+		MySQLDatabase = dbase;
+		MySQLTable = table;
+	}
 
 	public PlayerNotesSQLConfig(PlayerNotes plugin) {
 		this.plugin = plugin;
-	}
-
-	public void loadConfiguration() {
-		String mySQLServer = "MySQLServer";
-		String mySQLPort = "MySQLPort";
-		String mySQLUsername = "MySQLUsername";
-		String mySQLPassword = "MySQLPassword";
-		String mySQLDatabase = "MySQLDatabase";
-		String mySQLTable = "MySQLTable";
-		
-		plugin.getConfig().addDefault(mySQLServer, "localhost");
-		plugin.getConfig().addDefault(mySQLPort,  "3306");
-		plugin.getConfig().addDefault(mySQLUsername, "root");
-		plugin.getConfig().addDefault(mySQLPassword, "password");
-		plugin.getConfig().addDefault(mySQLDatabase, "db");
-		plugin.getConfig().addDefault(mySQLTable,  "playernotes");
-		plugin.getConfig().addDefault("showDebug", false);
-		
-		plugin.getConfig().options().copyDefaults(true);
-		
-		plugin.saveConfig();
 	}
 	
 	public String getMySQLServer() {
@@ -51,6 +40,30 @@ public class PlayerNotesSQLConfig {
 	
 	public String getMySQLTable() {
 		return plugin.getConfig().getString("MySQLTable");
+	}
+	
+	public void setMySQLServer(String inp) {
+		MySQLServer = inp;
+	}
+	
+	public void setMySQLPort(String inp) {
+		MySQLPort = inp;
+	}
+	
+	public void setMySQLUsername(String inp) {
+		MySQLUsername = inp;
+	}
+	
+	public void setMySQLPassword(String inp) {
+		MySQLPassword = inp;
+	}
+	
+	public void setMySQLDatabase(String inp) {
+		MySQLDatabase = inp;
+	}
+	
+	public void setMySQLTable(String inp) {
+		MySQLTable = inp;
 	}
 	
 	public boolean isShowDebug() {

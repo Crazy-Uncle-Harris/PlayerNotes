@@ -1,5 +1,6 @@
 package me.blha303;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -14,72 +15,124 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import couk.Adamki11s.SQL.SyncSQL;
-import couk.Adamki11s.Updates.UpdatePackage;
-
 public class PlayerNotes extends JavaPlugin implements Listener {
 
-	private static final Logger log = Logger.getLogger("Minecraft");
+	public Logger log = Logger.getLogger("Minecraft");
 	public PlayerNotes plugin;
 	public static Permission perms = null;
-	public final PlayerNotesSQLConfig pnConfig = new PlayerNotesSQLConfig(this);
-	public final PlayerNotesSQLLib pnSql = new PlayerNotesSQLLib(this);
+	public PlayerNotesSQLConfig pnConfig;
+	public PlayerNotesSQLLib pnSql;
 	public ResultSet result;
 	ChatColor header = ChatColor.getByChar("2");
 	ChatColor aboutc = ChatColor.getByChar("3");
 	String col = ChatColor.GRAY + ":" + ChatColor.getByChar("a");
 	String sep = ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + " |-| ";
-//  &2Notes from johnkapsis&7: &3blha303&7: &anotes &e&l|-|&f &3blha303&7: &amore notes
-//  &2Notes about blha303&7: &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
-	public SyncSQL sql = null;
-	UpdatePackage pack;
+	public Connection sql = null;
 
 	@Override
 	public void onDisable() {
-		this.sql.closeConnection();
+		try {
+			pnSql.SQLDisconnect();
+		} catch (SQLException e) {
+			error("Could not close connection", e);
+		}
 		log.info(String.format("[%s] Disabled Version %s", getDescription()
 				.getName(), getDescription().getVersion()));
 	}
 
 	@Override
 	public void onEnable() {
-		if (getServer().getPluginManager().getPlugin("Vault") == null
-				|| getServer().getPluginManager().getPlugin("Sync") == null) {
+		
+		// Checks for dependencies
+		if (getServer().getPluginManager().getPlugin("Vault") == null) {
 			log.severe(String.format(
-					"[%s] Disabled. Vault or Sync is missing!",
+					"[%s] Disabled. Vault is missing!",
 					getDescription().getName()));
 			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
-		pnConfig.loadConfiguration();
+		
+		// Loads modified configuration
+		String mySQLServer = "MySQLServer";
+		String mySQLPort = "MySQLPort";
+		String mySQLUsername = "MySQLUsername";
+		String mySQLPassword = "MySQLPassword";
+		String mySQLDatabase = "MySQLDatabase";
+		String mySQLTable = "MySQLTable";
+		getConfig().addDefault(mySQLServer, "localhost");
+		getConfig().addDefault(mySQLPort,  "3306");
+		getConfig().addDefault(mySQLUsername, "root");
+		getConfig().addDefault(mySQLPassword, "password");
+		getConfig().addDefault(mySQLDatabase, "db");
+		getConfig().addDefault(mySQLTable,  "playernotes");
+		getConfig().addDefault("showDebug", false);
+		getConfig().options().copyDefaults(true);
+		pnConfig = new PlayerNotesSQLConfig(this);
+		
+		saveConfig();
+		
+		// Sets up SQL
+		pnSql = new PlayerNotesSQLLib(this);
 		try {
-			this.sql = pnSql.SQLConnection();
+			this.sql = pnSql.SQLConnect();
 		} catch (SQLException e1) {
 			log.severe("[PlayerNotes] " + e1.toString());
 			getServer().getPluginManager().disablePlugin(this);
 		}
-		this.sql.initialise();
+		
+		// Checks if the notes table exists
 		try {
-			if (!this.sql.doesTableExist(this.pnConfig.getMySQLTable())) {
-				System.out.println("Table '" + this.pnConfig.getMySQLTable()
+			if (!pnSql.tableExists(this.pnConfig.getMySQLDatabase(), this.pnConfig.getMySQLTable())) {
+				log.info("[PlayerNotes] Table '"
+						+ this.pnConfig.getMySQLTable()
 						+ "' does not exist! Creating table...");
-				this.pnSql.createSqlTable(this.sql);
-				System.out.println("Table '" + this.pnConfig.getMySQLTable()
-						+ "' created!");
+				this.pnSql.createSqlTable();
+				log.info("[PlayerNotes] Table '"
+						+ this.pnConfig.getMySQLTable() + "' created!");
 			}
 		} catch (SQLException e1) {
-			log.severe("[PlayerNotes] " + e1.toString());
+			error("Unable to create table. Plugin disabled!", e1);
+			getServer().getPluginManager().disablePlugin(this);
 		}
-		this.sql.closeConnection();
+		
+		// Checks if the new datetime column exists. Doesn't work at the moment.
+//		if (!this.pnSql.columnExists(this.pnConfig.getMySQLDatabase(),
+//				this.pnConfig.getMySQLTable(), "datetime")) {
+//			log.info("[PlayerNotes] Creating datetime column for table.");
+//			try {
+//				pnSql.runUpdateQuery("ALTER TABLE "
+//						+ plugin.pnConfig.getMySQLTable()
+//						+ " ADD COLUMN datetime INT;");
+//			} catch (Exception e) {
+//				if (!(e instanceof SQLException)) {
+//					e.printStackTrace();
+//					getServer().getPluginManager().disablePlugin(this);
+//				}
+//				log.severe("[PlayerNotes] " + e.toString());
+//				log.severe("[PlayerNotes] Unable to create datetime column. Plugin disabled!");
+//				getServer().getPluginManager().disablePlugin(this);
+//			}
+//		}
+		
+		// Disconnect from SQL. If this doesn't happen, it times out later on.
+		try {
+			pnSql.SQLDisconnect();
+		} catch (SQLException e) {
+			error("Could not close connection", e);
+		}
 
+		// Register listeners
 		getServer().getPluginManager().registerEvents(this, this);
 
+		// Init Vault Permissions
 		setupPermissions();
 
+		// Show Enabled message
 		log.info(String.format("[%s] Enabled version %s", getDescription()
 				.getName(), getDescription().getVersion()));
 	}
 
+	// Set up Vault Permissions
 	private boolean setupPermissions() {
 		RegisteredServiceProvider<Permission> rsp = getServer()
 				.getServicesManager().getRegistration(Permission.class);
@@ -87,76 +140,75 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		return perms != null;
 	}
 
+	// For inserting a new note.
 	public boolean newPlayerNote(String notes, String about, String from) {
 		String notesa = notes.replace("\\", "\\\\");
 		String notesb = notesa.replace("'", "\\'");
-
+		long datetime = System.currentTimeMillis() / 1000l;
+		
 		try {
-			this.sql = pnSql.SQLConnection();
+			sql = pnSql.SQLConnect();
 		} catch (SQLException e1) {
-			log.severe("[PlayerNotes] " + e1.toString());
+			error("Unable to connect to SQL database", e1);
+			return false;
 		}
 
-		String query = "INSERT INTO " + this.pnConfig.getMySQLTable()
-				+ " (notes,about,fromusr) " + "VALUES ('" + notesb + "', '"
-				+ about + "', '" + from + "');";
-		if (this.pnConfig.isShowDebug()) {
-			log.info("[PlayerNames] DEBUG: " + query);
-		}
-		try {
-			this.sql.standardQuery(query);
-			this.sql.closeConnection();
+		if (pnSql.insertInto(notesb, about, from, datetime)) {
+			try {
+				pnSql.SQLDisconnect();
+			} catch (SQLException e) {
+				error("Unable to disconnect from SQL database", e);
+			}
 			return true;
-		} catch (SQLException e) {
-			log.info("[PlayerNotes] " + e.toString());
-			this.sql.closeConnection();
+		} else {
+			try {
+				pnSql.SQLDisconnect();
+			} catch (SQLException e) {
+				error("Unable to disconnect from SQL database", e);
+			}
 			return false;
 		}
 	}
 
+	// For getting a note
 	public String getPlayerNotes(String about) {
 		String notes = null;
 		String abouta = about.replace("\\", "\\\\");
 		String aboutb = abouta.replace("'", "\\'");
-		String query = "SELECT * FROM " + this.pnConfig.getMySQLTable()
-				+ " WHERE about='" + aboutb + "';";
 		try {
-			this.sql = pnSql.SQLConnection();
+			sql = pnSql.SQLConnect();
 		} catch (SQLException e1) {
-			log.severe("[PlayerNotes] " + e1.toString());
-		}
-
-		if (this.pnConfig.isShowDebug()) {
-			log.info("[PlayerNames] DEBUG: " + query);
-		}
-		try {
-			result = this.sql.sqlQuery(query);
-		} catch (SQLException e) {
-			log.severe("[PlayerNotes] " + e.toString());
+			error("Unable to connect to SQL database", e1);
 			return null;
 		}
-	//  &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
-		try {
-			if (result.isBeforeFirst()) {
-				for (int i = 1; result.absolute(i); i++) {
-					if (notes != null) {
-						notes = notes + sep + aboutc + result.getString("fromusr") + col + result.getString("notes");
-					} else {
-						notes = aboutc + result.getString("fromusr") + col + result.getString("notes");
+		result = pnSql.getInfo(false, aboutb);
+		if (result != null) {
+			// &3johnkapsis&7: &anotes &e&l|-|&f &3johnkapsis&7: &amore notes
+			try {
+				if (result.isBeforeFirst()) {
+					for (int i = 1; result.absolute(i); i++) {
+						if (notes != null) {
+							notes = notes + sep + aboutc
+									+ result.getString("fromusr") + col
+									+ result.getString("notes");
+						} else {
+							notes = aboutc + result.getString("fromusr") + col
+									+ result.getString("notes");
+						}
+						if (result.isAfterLast()) {
+							break;
+						}
 					}
-					if (result.isAfterLast()) {
-						break;
-					}
+					pnSql.SQLDisconnect();
+					return notes;
+				} else {
+					pnSql.SQLDisconnect();
+					return null;
 				}
-				this.sql.closeConnection();
-				return notes;
-			} else {
-				this.sql.closeConnection();
+			} catch (SQLException e) {
 				return null;
 			}
-		} catch (SQLException e) {
-			log.severe("[PlayerNotes] " + e.toString());
-			this.sql.closeConnection();
+		} else {
 			return null;
 		}
 	}
@@ -165,55 +217,41 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		String notes = null;
 		String froma = from.replace("\\", "\\\\");
 		String fromb = froma.replace("'", "\\'");
-		String query = "SELECT * FROM " + this.pnConfig.getMySQLTable()
-				+ " WHERE fromusr='" + fromb + "';";
-		try {
-			this.sql = pnSql.SQLConnection();
-		} catch (SQLException e1) {
-			log.severe("[PlayerNotes] " + e1.toString());
-		}
-
-		if (this.pnConfig.isShowDebug()) {
-			log.info("[PlayerNames] DEBUG: " + query);
-		}
-		try {
-			result = this.sql.sqlQuery(query);
-		} catch (SQLException e) {
-			log.severe("[PlayerNotes] " + e.toString());
-			return null;
-		}
-
-		try {
-			if (result.isBeforeFirst()) {
-				for (int i = 1; result.absolute(i); i++) {
-					if (notes != null) {
-						notes = notes + sep + aboutc + result.getString("about") + col + result.getString("notes");
-					} else {
-						notes = aboutc + result.getString("about") + col + result.getString("notes");
+		result = pnSql.getInfo(true, fromb);
+		if (result != null) {
+			try {
+				if (result.isBeforeFirst()) {
+					for (int i = 1; result.absolute(i); i++) {
+						if (notes != null) {
+							notes = notes + sep + aboutc
+									+ result.getString("about") + col
+									+ result.getString("notes");
+						} else {
+							notes = aboutc + result.getString("about") + col
+									+ result.getString("notes");
+						}
+						if (result.isAfterLast()) {
+							break;
+						}
 					}
-					if (result.isAfterLast()) {
-						break;
-					}
+					pnSql.SQLDisconnect();
+					return notes;
+				} else {
+					pnSql.SQLDisconnect();
+					return null;
 				}
-				this.sql.closeConnection();
-				return notes;
-			} else {
-				this.sql.closeConnection();
+			} catch (SQLException e) {
 				return null;
 			}
-		} catch (SQLException e) {
-			log.severe("[PlayerNotes] " + e.toString());
-			this.sql.closeConnection();
+		} else {
 			return null;
 		}
 	}
 
-	public boolean onCommand(CommandSender sender, Command command,
-			String label, String[] args) {
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		Player player = null;
 		String notes;
 		String pnvnode = "playernotes.pnv";
-		// String pnhnode = "playernotes.pnh";
 		String pnpnode = "playernotes.pnp";
 		String pnanode = "playernotes.pna";
 
@@ -226,40 +264,6 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		if (args.length == 0) {
 			return false;
 		}
-
-		/*
-		 * if (command.getName().equalsIgnoreCase("pnoteshelp")) { boolean pnv =
-		 * perms.has(player, pnvnode); boolean pnp = perms.has(player, pnpnode);
-		 * boolean pna = perms.has(player, pnanode); boolean isplayer = false;
-		 * boolean go = false; if (player != null) { isplayer = true; if
-		 * (perms.has(sender, pnhnode)) { go = true; } else { go = false; } }
-		 * else { go = true; }
-		 * 
-		 * if (go) { ChatColor red = ChatColor.RED; ChatColor white =
-		 * ChatColor.WHITE; ChatColor aqua = ChatColor.AQUA; if (isplayer) {
-		 * player.sendMessage(String.format(ChatColor.GREEN + "%s v%s",
-		 * getDescription().getName(), getDescription().getVersion())); if (pnv
-		 * || pnp || pna) { player.sendMessage(String.format(ChatColor.GOLD +
-		 * "Commands:")); if (pnv) { player.sendMessage(String.format( red +
-		 * "/pnotesview <PLAYER>" + white + " - " + aqua +
-		 * "List all notes about a player")); } if (pnp) {
-		 * player.sendMessage(String.format( red + "/pnotesposted <PLAYER>" +
-		 * white + " - " + aqua + "List all notes from a player")); } if (pna) {
-		 * player.sendMessage(String.format( red + "/pnotesadd <PLAYER> <NOTE>"
-		 * + white + " - " + aqua + "Add a note")); } return true; } else {
-		 * player.sendMessage(red +
-		 * "You don't have access to any PlayerNotes commands"); return true; }
-		 * } else { log.info(String.format(ChatColor.GREEN + "%s v%s",
-		 * getDescription().getName(), getDescription().getVersion()));
-		 * log.info(String.format(ChatColor.GOLD + "Commands:"));
-		 * log.info(String.format( red + "/pnotesview <PLAYER>" + white + " - "
-		 * + aqua + "List all notes about a player")); log.info(String.format(
-		 * red + "/pnotesposted <PLAYER>" + white + " - " + aqua +
-		 * "List all notes from a player")); log.info(String.format( red +
-		 * "/pnotesadd <PLAYER> <NOTE>" + white + " - " + aqua + "Add a note"));
-		 * return true; } } else { player.sendMessage(ChatColor.RED +
-		 * "You can't use this command."); return true; } }
-		 */
 
 		if (command.getName().equalsIgnoreCase("pnotesview")) {
 			boolean go = false;
@@ -277,12 +281,14 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				notes = getPlayerNotes(args[0]);
 				if (notes != null) {
 					if (player != null) {
-						player.sendMessage(header + "Notes for " + args[0] + ": " + notes);
+						player.sendMessage(header + "Notes for " + args[0]
+								+ ": " + notes);
 						log.info(String.format("[%s] %s used /%s %s",
 								getDescription().getName(), sender.getName(),
 								command.getName(), args[0]));
 					} else {
-						log.info(header + "[PlayerNotes] Notes for " + args[0] + ": " + notes);
+						log.info(header + "[PlayerNotes] Notes for " + args[0]
+								+ ": " + notes);
 					}
 					return true;
 				} else {
@@ -323,15 +329,14 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 				notes = getFromNotes(args[0]);
 				if (notes != null) {
 					if (player != null) {
-						player.sendMessage(header + "Notes from "
-								+ args[0] + ": " + notes);
+						player.sendMessage(header + "Notes from " + args[0]
+								+ ": " + notes);
 						log.info(String.format("[%s] %s used /notes %s",
 								getDescription().getName(), sender.getName(),
 								args[0]));
 					} else {
-						log.info(header
-								+ "[PlayerNotes] Notes from " + args[0] + ": "
-								+ notes);
+						log.info(header + "[PlayerNotes] Notes from " + args[0]
+								+ ": " + notes);
 					}
 					return true;
 				} else {
@@ -414,6 +419,16 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 			}
 		}
 		return false;
+	}
+	
+	public void error(String error, SQLException exception) {
+		log.severe("[PlayerNotes] " + error);
+		log.severe("[PlayerNotes] Debug: " + exception.getMessage());
+	}
+	
+	public void error(String error, SQLException exception, String name) {
+		log.severe("[PlayerNotes] " + error + "! Triggered by " + name);
+		log.severe("[PlayerNotes] Debug: " + exception.getMessage());
 	}
 
 }
