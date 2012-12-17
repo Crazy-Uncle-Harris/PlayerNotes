@@ -11,11 +11,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class PlayerNotes extends JavaPlugin implements Listener {
+public class PlayerNotes extends JavaPlugin {
 
 	public Logger log = Logger.getLogger("Minecraft");
 	public PlayerNotes plugin;
@@ -124,9 +123,6 @@ public class PlayerNotes extends JavaPlugin implements Listener {
 		} catch (SQLException e) {
 			error("Could not close connection", e);
 		}
-
-		// Register listeners
-		getServer().getPluginManager().registerEvents(this, this);
 
 		// Init Vault Permissions
 		setupPermissions();
