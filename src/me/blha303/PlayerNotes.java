@@ -142,8 +142,6 @@ public class PlayerNotes extends JavaPlugin {
 
 	// For inserting a new note.
 	public boolean newPlayerNote(String notes, String about, String from) {
-		String notesa = notes.replace("\\", "\\\\");
-		String notesb = notesa.replace("'", "\\'");
 		long datetime = System.currentTimeMillis() / 1000l;
 
 		try {
@@ -153,7 +151,7 @@ public class PlayerNotes extends JavaPlugin {
 			return false;
 		}
 
-		if (pnSql.insertInto(notesb, about, from, datetime)) {
+		if (pnSql.insertInto(notes, about, from, datetime)) {
 			try {
 				pnSql.SQLDisconnect();
 			} catch (SQLException e) {

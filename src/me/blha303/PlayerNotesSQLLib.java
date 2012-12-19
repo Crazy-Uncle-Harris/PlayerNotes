@@ -130,8 +130,10 @@ public class PlayerNotesSQLLib {
 
 	public boolean insertInto(String notes, String about, String fromusr,
 			long datetime) {
+		String notesa = notes.replace("\\", "\\\\");
+		String notesb = notesa.replace("'", "\\'");
 		String query = "INSERT INTO " + plugin.pnConfig.getMySQLTable()
-				+ " (notes,about,fromusr,datetime) " + "VALUES ('" + notes
+				+ " (notes,about,fromusr,datetime) " + "VALUES ('" + notesb
 				+ "', '" + about + "', '" + fromusr + "', " + datetime + ");";
 		debug(query);
 		try {
