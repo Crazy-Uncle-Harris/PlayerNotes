@@ -5,20 +5,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-import net.milkbowl.vault.permission.Permission;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PlayerNotes extends JavaPlugin {
 
 	public Logger log = Logger.getLogger("Minecraft");
 	public PlayerNotes plugin;
-	public static Permission perms = null;
 	public PlayerNotesSQLConfig pnConfig;
 	public PlayerNotesSQLLib pnSql;
 	public ResultSet result;
@@ -124,20 +120,9 @@ public class PlayerNotes extends JavaPlugin {
 			error("Could not close connection", e);
 		}
 
-		// Init Vault Permissions
-		setupPermissions();
-
 		// Show Enabled message
 		log.info(String.format("[%s] Enabled version %s", getDescription()
 				.getName(), getDescription().getVersion()));
-	}
-
-	// Set up Vault Permissions
-	private boolean setupPermissions() {
-		RegisteredServiceProvider<Permission> rsp = getServer()
-				.getServicesManager().getRegistration(Permission.class);
-		perms = rsp.getProvider();
-		return perms != null;
 	}
 
 	// For inserting a new note.
@@ -278,7 +263,7 @@ public class PlayerNotes extends JavaPlugin {
 		if (command.getName().equalsIgnoreCase("pnotesview")) {
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, pnvnode)) {
+				if (sender.hasPermission(pnvnode)) {
 					go = true;
 				} else {
 					go = false;
@@ -326,7 +311,7 @@ public class PlayerNotes extends JavaPlugin {
 		if (command.getName().equalsIgnoreCase("pnotesposted")) {
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, pnpnode)) {
+				if (sender.hasPermission(pnpnode)) {
 					go = true;
 				} else {
 					go = false;
@@ -375,7 +360,7 @@ public class PlayerNotes extends JavaPlugin {
 			boolean note;
 			boolean go = false;
 			if (player != null) {
-				if (perms.has(sender, pnanode)) {
+				if (sender.hasPermission(pnanode)) {
 					go = true;
 				} else {
 					go = false;
